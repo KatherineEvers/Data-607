@@ -1,0 +1,2 @@
+git remote add origin https://github.com/KatherineEvers/Mushroom-Data
+git push -u origin master
