@@ -1,0 +1,60 @@
+---
+title: "607 Assignment 9: Web APIs"
+author: "Katherine Evers"
+date: "3/29/2019"
+output:  
+  html_document:  
+    toc: true  
+    toc_float: true  
+---
+##Assignment Overview
+
+The New York Times web site provides a rich set of APIs, as described here: http://developer.nytimes.com/docs 
+
+Your task is to choose one of the New York Times APIs, construct an interface in R to read in the JSON data, and transform it to an R dataframe.
+
+I chose to extract the latest bestselling nonfiction paperbacks from the Books API.
+
+##Load Libraries 
+```{r results='hide', message=FALSE, warning=FALSE}
+library(jsonlite) #To read JSON files
+library(dplyr) #To transform dataframes
+library(kableExtra) #To create HTML data table
+```
+
+##Import Data
+```{r}
+#Import url and API key
+url <- 'http://api.nytimes.com/svc/books/v3/lists/current/paperback-nonfiction.json'
+apiKey <- 'KQEp4vUctvgrBNlJ2NbWhqAfjyPQkqhf'
+
+#Construct full url
+url <- paste0(url, '?api-key=', apiKey)
+
+#Read lines from url
+books <- readLines(url, warn = FALSE)
+
+#Read data in JSON format
+books <- fromJSON(books)
+```
+
+##Create Dataframe
+```{r}
+booksDf <- books$results
+
+booksDf2 <- booksDf$books
+
+#Create a subset of dataframe
+booksDf3 = booksDf2[c("rank","weeks_on_list","title", "author", "primary_isbn13", "publisher", "description")]
+
+#Rename columns
+colnames(booksDf3) = c("Rank", "Weeks On List", "Title", "Author", "ISBN", "Publisher", "Description")
+
+#Manipulate table and display
+booksDf3 %>% 
+  kable() %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+  scroll_box(width = "100%", height = "450px")
+
+```
+
