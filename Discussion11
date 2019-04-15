@@ -1,0 +1,62 @@
+---
+title: "607 Week 11 Discussion"
+author: "Katherine Evers"
+date: "4/14/2019"
+output:  
+  html_document:  
+    toc: true  
+    toc_float: true  
+---
+###Recommender Systems
+
+A recommender system predicts meaningful user preferences and makes suggestions. One example of a popular recommender system is Tinder. Launched in 2012, Tinder is one of the most popular lifestyle dating apps with over 10 million users active daily. It was one of the first "swiping apps," where users swipe left or right on their phone screens to categorize potential matches. By 2014, Tinder users were swiping about 100 billion times per day.
+
+###Scenario Design Analysis
+
+```{r, echo=FALSE}
+knitr::include_graphics('/Users/katieevers/Desktop/image.png')
+```
+
+1. Target Audience
+
+    Tinder is mostly geared toward millenials looking for dating matches in their geographical locations
+
+2. Key goals
+
+    Tinder's main goals include offering a platform for people to meet partners they would not usually meet, creating good matches between users, and fostering relationships.
+    
+    To quote the Tinder website: "If you’re here to meet new people, expand your social network, meet locals when you’re traveling, or just live in the now, you’ve come to the right place." 
+
+3. How Tinder accomplishes its goals
+
+    Tinder's main swipe feature invites users to swipe right to "like" or left to "pass." If two users like each other, it is a "match," and they can chat through through the app. Tinder utilizes the "double opt-in" so that two people will match only if both are interested. Users can also connect their Tinder profiles to their Facebook accounts in order to use their photos from Facebook and to see if a potential match has mutual Facebook friends.
+
+###Reverse Engineering
+
+Tinder initially used an Elo rating system similar to how a chess player's skill level is calculated: Your score increases based on how many people swipe right on your profile and the weight of who the swiper is. The more right swipes a person has received, the more their right swipe increased your score. Consequently, Tinder matched people with similar scores based on the assumption that people with similar scores have the same "desirability." In March 2019, Tinder stopped utilizing the Elo score, claiming it was outdated. They introduced new technology. Now the app makes predictions by analyzing (1) the way users select many of the same profiles as other users who are similar to them and (2) how one user's behavior can predict another's. The other primary algorithm factors are geographic location and age preferences. 
+
+```{r, echo=FALSE}
+knitr::include_graphics('/Users/katieevers/Desktop/image1.png')
+```
+
+
+In October 2016, Tinder released a new feature called "Smart Photos." This new feature uses machine learning to identify which photos work and which don't. Smart Photos employs A/B testing in which the first profile photo seen by others is switched. Then it analyzes the responses by left and right swipes. Based on the responses, it reorders users' photos to show the most successful one first. Smart Photos also adjust photos to the preferences of potential matches. For example, if your first photo features a dog and your profile is viewed by someone who always swipes left on dog photos, Tinder will pick an alternative photo to show first.
+
+```{r, echo=FALSE}
+knitr::include_graphics('/Users/katieevers/Desktop/image2.png')
+```
+
+###Recomendations
+Tinder could improve its user experience by allowing users to sort potential matches by their recent activity. So users could filter out people who haven't been using the app lately or stopped using the app. Additionally, status of a user could be displayed as "online", "offline", and "inactive" in the chat feature. Tinder could also implement a feature where users can filter potential matches on those who share a particular interest or passion, or want to go to a particular location or event.
+
+###Sources
+
+https://qz.com/809681/tinders-machine-learning-algorithms-can-now-serve-your-most-appealing-photos-to-potential-dates/
+
+https://www.vox.com/2019/2/7/18210998/tinder-algorithm-swiping-tips-dating-app-science
+
+https://en.wikipedia.org/wiki/Tinder_(app)
+
+https://www.help.tinder.com/hc/en-us/articles/115004647686-What-is-Tinder-
+
+
