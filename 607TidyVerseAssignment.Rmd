@@ -7,6 +7,8 @@ output:
     toc: true  
     toc_float: true 
 ---
+http://rpubs.com/KatherineEvers/491236
+
 #Objective
 
 Use `ggplot2` from the `tidyverse` package to create a map that shows the top locations of 2018 U.S. Data Science jobs
