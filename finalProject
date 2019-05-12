@@ -48,8 +48,15 @@ require(gridExtra)
 
 #Obtain Data
 ```{r}
-#Import Amazon Nasdaq data
+#Import Amazon Nasdaq stock price data from csv file downloaded from Yahoo Finance and stored to github
 amzn <- read.csv("https://raw.githubusercontent.com/KatherineEvers/Data-607/master/AMZN.csv")
+```
+```{r echo=FALSE}
+#Set twitter API keys and tokens
+twitterAPIKey <- 'DI4u4NelNqH9yaeAm4M8brGWk' 
+twitterAPISecret <- 'huA0jYxCQ7aJPHaLPhUMtRByug9QrfNkta6uVg5CS20zQ55xzb'
+twitterAccessToken <- '2311003355-L8NAWFhdfMYSeIN91amx8HpnK4rInA4NAJGYkx4' 
+twitterTokenSecret <- 'secuJzKRw9VeEQI2EnWusBY4PshvBKRmBkWzbIiBg9XWZ'
 ```
 
 ```{r}
@@ -224,6 +231,9 @@ par(new=TRUE)
 plot(amzn2$Date,amzn2$zScore, type="l", axes=F, xlab=NA, ylab=NA, col="blue")
 axis(side = 4)
 mtext(side = 4, line = 3, 'Closing Stock Price z-Score')
+legend("topright",
+       legend=c("Mean Sentiment Score"),
+       lty=c(1,0), col=c("red3"))
 
 ```
 
@@ -235,3 +245,6 @@ Ran into errors using twitter API. `searchtwitter` only returned 750 tweets maxi
 
 #Conclusion
 Based on the data collected and analyzed, it does not appear that trends in twitter sentiments regarding Jeff Bezos and Amazon's closing Nasdaq prices have similar trends. In fact, they seem to have an indirect relationship overall. As mean twitter sentiment score increases, closing stock price decreases. Further investigation includes gathering more data over a larger time frame and conducting a more sophisticated sentiment analysis. 
+
+
+
