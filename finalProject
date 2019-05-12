@@ -1,0 +1,237 @@
+---
+title: "607 Final Project"
+author: "Katherine Evers"
+date: "5/4/2019"
+output:  
+  html_document:  
+    theme: cerulean
+    toc: true  
+    toc_float: true 
+---
+#Overview
+**Goal: **  
+Analyze closing Nasdaq stock prices of Amazon in relation to Twitter sentiment analysis
+
+**Research Question:**    
+Do closing Nasdaq stock prices of Amazon and Twitter sentiment follow similar trends?
+
+**Motivation:**     
+Predicting the stock market has always been a challenge. New data sources, including social media, may offer real time predictive alternatives. I wanted like to investigate Amazon in particular due to its prominence and heavy news coverage revolving around Amazon's CEO Jeff Bezos. 
+
+**Procedure:**  
+This analysis was performed following a “data science workflow,” namely steps of the SEMN workflow:
+
+  1. Obtain data
+  2. Scrub data
+  3. Explore data
+  4. Interpret data
+
+**Data Sources:**    
+
+  1. Twitter API   
+  2. Yahoo Finance 
+
+
+#Load Libraries
+```{r results='hide', message=FALSE, warning=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(httr)
+library(stringr)
+library(twitteR)
+library(magrittr)
+library(SentimentAnalysis)
+require(gridExtra)
+
+```
+
+#Obtain Data
+```{r}
+#Import Amazon Nasdaq data
+amzn <- read.csv("https://raw.githubusercontent.com/KatherineEvers/Data-607/master/AMZN.csv")
+```
+
+```{r}
+#Setup Twitter
+setup_twitter_oauth(consumer_key = twitterAPIKey,
+                    consumer_secret = twitterAPISecret,
+                    access_token = twitterAccessToken,
+                    access_secret = twitterTokenSecret)
+
+#Set criteria and get tweets
+numberOfTweets <- 750
+#Scrape tweets containing "#jeffBezos" and "@jeffBezos"
+tweets <- searchTwitter(searchString="#jeffbezos", n = numberOfTweets, lang="en")
+tweets <- searchTwitter(searchString="#jeffbezos", n = numberOfTweets, lang="en")
+tweets2 <- searchTwitter(searchString="@jeffBezos", n = numberOfTweets, lang="en")
+tweetsDF <- twListToDF(tweets)
+tweetsDF2 <- twListToDF(tweets2)
+tweetsFullDF <- rbind(tweetsDF, tweetsDF2)
+
+```
+#Scrub Data 
+
+```{r}
+#Create subset of data
+amzn <- subset(amzn, select = c(Date, Close))
+#Convert factors to dates
+amzn$Date <- as.Date(amzn$Date)
+```
+
+
+Clean text from tweets:    
+
+  1. Remove whitespace  
+  2. Replace apostrophes with %% (for later replacement)  
+  3. Remove emojis and other Unicode characters  
+  4. Remove additional Unicode parts that may have remained  
+  5. Remove orphaned full-stops  
+  6. Reduce double spaces to single spaces  
+  7. Change %% back to apostrophes  
+  8. Remove URL from tweet  
+  9. Replace any line breaks with "-"    
+  10. Remove double hyphens where there were two line breaks  
+  11. Fix ampersand  
+  12. Add string to empty values (when only a URL was posted)  
+  13. Look for truncated tweets (the API only retrieves 140 characters) and add elipses  
+  14. Write new data frame for cleaned tweets  
+
+```{r}
+#Convert to dataframe and encode to native
+x <- tweetsFullDF
+x$text <- enc2native(x$text)
+
+#Clean text
+x$text <- gsub("^[[:space:]]*","",x$text) # Remove leading whitespaces
+x$text <- gsub("[[:space:]]*$","",x$text) # Remove trailing whitespaces
+x$text <- gsub(" +"," ",x$text) #Remove extra whitespaces
+x$text <- gsub("'", "%%", x$text) #Replace apostrophes with %%
+x$text <- iconv(x$text, "latin1", "ASCII", sub="") # Remove emojis
+x$text <- gsub("<(.*)>", "", x$text) #Remove Unicodes like <U+A>
+x$text <- gsub("\\ \\. ", " ", x$text) #Replace orphaned fullstops with space
+x$text <- gsub("  ", " ", x$text) #Replace double space with single space
+x$text <- gsub("%%", "\'", x$text) #Change %% back to apostrophes
+x$text <- gsub("https(.*)*$", "", x$text) #Remove tweet URL
+x$text <- gsub("\\n", "-", x$text) #Replace line breaks with "-"
+x$text <- gsub("--", "-", x$text) #Remove double "-" from double line breaks
+x$text <- gsub("&amp;", "&", x$text) #Fix ampersand &
+x$text[x$text == " "] <- "<no text>"
+
+for (i in 1:nrow(x)) {
+    if (x$truncated[i] == TRUE) {
+        x$text[i] <- gsub("[[:space:]]*$","...",x$text[i])
+    }
+}
+
+#Select desired column
+cleanTweets <- x %>% 
+               select("text")
+
+```
+
+#Explore Data 
+
+Sentiment Score
+
+"The `SentimentAnalysis` package introduces a powerful toolchain facilitating the sentiment analysis of textual contents in R. This implementation utilizes various existing dictionaries, such as QDAP, Harvard IV and Loughran-McDonald." 
+
+```{r}
+#Analyze sentiment
+sentiment <- analyzeSentiment(cleanTweets)
+#Extract dictionary-based sentiment according to the QDAP dictionary
+sentiment2 <- sentiment$SentimentQDAP
+#View sentiment direction (i.e. positive, neutral and negative)
+sentiment3 <- convertToDirection(sentiment$SentimentQDAP)
+
+#Extract and convert 'date' column
+date <- x$created
+date <- str_extract(date, "\\d{4}-\\d{2}-\\d{2}")
+date <- as.Date(date)
+date <- as.Date(date, format = "%m/%d/%y")
+
+#Create new dataframe with desired columns
+df <- cbind(cleanTweets, sentiment2, sentiment3, date)
+#Remove rows with NA
+df <- df[complete.cases(df), ]
+
+
+#Calculate the average of daily sentiment score
+df2 <- df %>% 
+       group_by(date) %>%
+       summarize(meanSentiment = mean(sentiment2, na.rm=TRUE))
+
+
+DT::datatable(df2, editable = TRUE)
+
+#Get frquency of each sentiment i.e. positive, neutral, and negative  
+freq <- df %>% 
+        group_by(date,sentiment3) %>% 
+        summarise(Freq=n())
+
+#Convert data from long to wide
+freq2 <- freq %>% 
+         spread(key = sentiment3, value = Freq)
+
+DT::datatable(freq2, editable = TRUE)
+
+ggplot() + 
+  geom_bar(mapping = aes(x = freq$date, y = freq$Freq, fill = freq$sentiment3), stat = "identity") +
+  ylab('Sentiment Frequency') +
+  xlab('Date')
+
+#Calculate z-Scores of Amazon closing stock prices
+mu <- mean(amzn$Close)
+sd <- sd(amzn$Close)
+amzn2 <- amzn %>% 
+         mutate(zScore = (amzn$Close-mu)/sd)
+
+#Plot mean sentiment scores
+p1 <- ggplot(data=df2, aes(x=date,y=meanSentiment, group=1)) +
+  geom_line()+
+  geom_point() +
+  ylab("Mean Twitter Sentiment Score")
+
+#plot Amazon Nasdaq z-score prices
+p2 <- ggplot(data=amzn2, aes(x=Date,y=zScore, group=1)) +
+  geom_line()+
+  geom_point() +
+  ylab("Z-Score of closing stock price")
+  scale_x_date(date_breaks = "1 day", 
+                 limits = as.Date(c('2019-05-03','2019-05-12')))
+plot1 <- p1
+plot2 <- p2
+grid.arrange(plot1, plot2, nrow=2)
+
+#Plot both data on same plot
+ggplot() + 
+  geom_line(mapping = aes(x = amzn2$Date, y = amzn2$zScore), size = 1) + 
+  geom_line(mapping = aes(x = df2$date, y = df2$meanSentiment*20), size = 1, color = "blue") +
+  scale_x_date(name = "Date", labels = NULL) +
+  scale_y_continuous(name = "z-Score of Closing Stock Price", 
+  #Scale 2nd y-axis by factor of 20
+  sec.axis = sec_axis(~./20, name = "Sentiment Score")) + 
+  theme(
+      axis.title.y = element_text(color = "grey"),
+      axis.title.y.right = element_text(color = "blue"))
+
+#Plot both data on same plot
+#Shift stock prices back one day
+plot(df2$date,df2$meanSentiment, type="l", col="red3",  xlab='Date', ylab='Mean Sentiment Score')
+
+par(new=TRUE)
+
+plot(amzn2$Date,amzn2$zScore, type="l", axes=F, xlab=NA, ylab=NA, col="blue")
+axis(side = 4)
+mtext(side = 4, line = 3, 'Closing Stock Price z-Score')
+
+```
+
+#Limitations
+Ran into errors using twitter API. `searchtwitter` only returned 750 tweets maximum in one command and did not accept restrictions on dates. Would have liked to scrape same number of tweets for each date.
+
+`analyzeSentiment` from R's sentiment analysis package assigns a sentiment score based on individual words. However, it is not sophisticated enough to evaluate the context of the string or sarcasm. Thus, sentiment analysis scores are limited.
+
+
+#Conclusion
+Based on the data collected and analyzed, it does not appear that trends in twitter sentiments regarding Jeff Bezos and Amazon's closing Nasdaq prices have similar trends. In fact, they seem to have an indirect relationship overall. As mean twitter sentiment score increases, closing stock price decreases. Further investigation includes gathering more data over a larger time frame and conducting a more sophisticated sentiment analysis. 
