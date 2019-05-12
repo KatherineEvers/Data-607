@@ -12,11 +12,14 @@ output:
 **Goal: **  
 Analyze closing Nasdaq stock prices of Amazon in relation to Twitter sentiment analysis
 
-**Research Question:**    
+**Research Questions:**    
 Do closing Nasdaq stock prices of Amazon and Twitter sentiment follow similar trends?
 
+Can one be used to predict the other?  
+
+
 **Motivation:**     
-Predicting the stock market has always been a challenge. New data sources, including social media, may offer real time predictive alternatives. I wanted like to investigate Amazon in particular due to its prominence and heavy news coverage revolving around Amazon's CEO Jeff Bezos. 
+Predicting the stock market has always been a challenge. New data sources, including social media, may offer real time predictive alternatives. I wanted to investigate Amazon in particular due to its prominence and heavy news coverage revolving around Amazon's CEO Jeff Bezos. 
 
 **Procedure:**  
 This analysis was performed following a “data science workflow,” namely steps of the SEMN workflow:
@@ -244,7 +247,7 @@ Ran into errors using twitter API. `searchtwitter` only returned 750 tweets maxi
 
 
 #Conclusion
-Based on the data collected and analyzed, it does not appear that trends in twitter sentiments regarding Jeff Bezos and Amazon's closing Nasdaq prices have similar trends. In fact, they seem to have an indirect relationship overall. As mean twitter sentiment score increases, closing stock price decreases. Further investigation includes gathering more data over a larger time frame and conducting a more sophisticated sentiment analysis. 
+Based on the data collected and analyzed, twitter sentiments regarding Jeff Bezos and Amazon's closing Nasdaq stock prices do not have similar trends and do not have a predictive nature. In fact, they seem to have an indirect relationship overall. As mean twitter sentiment score increases, closing stock price decreases. However, this conclusion is hindered by the limitations incurred by this analysis. Further investigation includes gathering more data over a larger time frame and conducting a more sophisticated sentiment analysis. 
 
 
 
