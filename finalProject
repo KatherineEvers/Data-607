@@ -31,8 +31,12 @@ This analysis was performed following a “data science workflow,” namely step
 
 **Data Sources:**    
 
-  1. Twitter API   
+   1. Twitter API   
+      Use Twitter API platform to web scrape tweets containing "#jeffbezos" and "@jeffBezos" 
+      
   2. Yahoo Finance 
+      Download csv file containing Nasdaq stock price history for Amazon and store in github repository  
+      (https://finance.yahoo.com/quote/AMZN/history?period1=1556856000&period2=1557633600&interval=1d&filter=history&frequency=1d)
 
 
 #Load Libraries
