@@ -1,5 +1,6 @@
 #Question 1
 
+```{r}
 library(shiny)
 library(ggplot2)
 library(tidyverse)
@@ -50,9 +51,11 @@ fluidPage(
     plotOutput('mort')
   )
 )
+```
 
 # Question 2
 
+```{r}
 library(shiny)
 library(ggplot2)
 library(tidyverse)
@@ -97,6 +100,7 @@ data2 <- data %>%
 data3 <- data2 %>%
   group_by(ICD.Chapter, Year) %>%
   mutate(nat_avg = sum(wgt_state_crudeRate)/sum(Population))
+  
 
 fluidPage(
   
@@ -113,3 +117,4 @@ fluidPage(
     plotOutput('mort')
   )
 )
+```
