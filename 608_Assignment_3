@@ -1,0 +1,115 @@
+#Question 1
+
+library(shiny)
+library(ggplot2)
+library(tidyverse)
+
+function(input, output) {
+  
+  data <- read.csv(url("https://raw.githubusercontent.com/KatherineEvers/CUNY_DATA_608/master/module3/data/cleaned-cdc-mortality-1999-2010-2.csv"), header=TRUE)
+  data2010 <- data[data$Year == 2010,]
+  
+  # create bar chart
+  output$mort <- renderPlot({
+  
+  #filter data based on selected cause of death
+  selectData <-  data2010 %>% filter(ICD.Chapter == input$Cause)
+  
+  ggplot(selectData, aes(x=reorder(State, -Crude.Rate), y=Crude.Rate)) +
+    geom_bar(stat = "identity", fill="tomato3") +
+    coord_flip() +
+    xlab("State") +
+    ylab("Crude Rate")
+    
+  }, height=700)
+  
+}
+
+library(shiny)
+library(ggplot2)
+library(tidyverse)
+
+data <- read.csv(url("https://raw.githubusercontent.com/KatherineEvers/CUNY_DATA_608/master/module3/data/cleaned-cdc-mortality-1999-2010-2.csv"), header=TRUE)
+data2 <- data %>%
+  mutate(wgt_state_crudeRate = data$Population*data$Crude.Rate)
+data3 <- data2 %>%
+  group_by(ICD.Chapter, Year) %>%
+  mutate(nat_avg = sum(wgt_state_crudeRate)/sum(Population))
+
+fluidPage(
+  
+  # app title
+  titlePanel("State vs National Average Crude Mortality Rates by Cause"),
+  
+  #cause menu
+  sidebarPanel(
+    selectInput("Cause", "Cause of Death", unique(sort(data3$ICD.Chapter)),)),
+  
+  # bar chart
+  mainPanel(
+    plotOutput('mort')
+  )
+)
+
+# Question 2
+
+library(shiny)
+library(ggplot2)
+library(tidyverse)
+
+function(input, output) {
+  
+  data <- read.csv(url("https://raw.githubusercontent.com/KatherineEvers/CUNY_DATA_608/master/module3/data/cleaned-cdc-mortality-1999-2010-2.csv"), header=TRUE)
+  data2 <- data %>%
+    mutate(wgt_state_crudeRate = data$Population*data$Crude.Rate)
+  data3 <- data2 %>%
+    group_by(ICD.Chapter, Year) %>%
+    mutate(nat_avg = sum(wgt_state_crudeRate)/sum(Population))
+  
+  # create bar chart
+  output$mort <- renderPlot({
+    
+    #filter data based on selected cause of death
+  selectData <-  data3 %>% 
+    filter(ICD.Chapter == input$Cause & Year == input$Year)
+    
+    
+  ggplot(selectData) +
+    geom_bar(aes(x=reorder(State, -Crude.Rate), y=Crude.Rate),stat="identity", fill="tomato3") +
+    geom_hline(aes(yintercept=nat_avg, linetype="National Average")) +
+    xlab("State") +
+    ylab("Crude Rate") +
+    coord_flip() +
+    scale_linetype_manual(name="Legend", values = 1)
+    
+    
+  }, height=700)
+  
+}
+
+library(shiny)
+library(ggplot2)
+library(tidyverse)
+
+data <- read.csv(url("https://raw.githubusercontent.com/KatherineEvers/CUNY_DATA_608/master/module3/data/cleaned-cdc-mortality-1999-2010-2.csv"), header=TRUE)
+data2 <- data %>%
+  mutate(wgt_state_crudeRate = data$Population*data$Crude.Rate)
+data3 <- data2 %>%
+  group_by(ICD.Chapter, Year) %>%
+  mutate(nat_avg = sum(wgt_state_crudeRate)/sum(Population))
+
+fluidPage(
+  
+  # app title
+  titlePanel("State vs National Average Crude Mortality Rates by Cause"),
+  
+  #cause menu
+  sidebarPanel(
+    selectInput("Cause", "Cause of Death", unique(sort(data3$ICD.Chapter)),),
+    selectInput("Year", "Year", unique(sort(data3$Year)),)),
+  
+  # bar chart
+  mainPanel(
+    plotOutput('mort')
+  )
+)
