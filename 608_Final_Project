@@ -1,0 +1,234 @@
+```{r}
+#load libraries
+library(shiny)
+library(ggplot2)
+library(tidyverse)
+library(scales) 
+library(lubridate)
+
+
+#Server
+function(input, output) {
+  
+  #pull data
+  df_1 <- read.csv(url('https://raw.githubusercontent.com/KatherineEvers/Data-607-608/master/COVID-19_Daily_Counts_of_Cases__Hospitalizations__and_Deaths.csv'), header=TRUE)
+  df_2 <- read.csv(url('https://raw.githubusercontent.com/KatherineEvers/Data-607-608/master/Social_Distancing__Parks_Crowds_Data.csv'), header=TRUE)
+  
+  #Data processing
+  
+  # convert date columns to datetime format 'mm/dd/yyyy'
+  df_1$DATE_OF_INTEREST <- as.Date(df_1$DATE_OF_INTEREST, "%m/%d/%Y")
+  df_2$encounter_timestamp <- as.Date(df_2$encounter_timestamp, "%m/%d/%Y")
+  
+  # sort by date
+  df2_sorted<- df_2[order(df_2$encounter_timestamp),]
+  df1_sorted<- df_1[order(df_1$DATE_OF_INTEREST),]
+  
+  #remove feb record
+  df1_sorted <- df1_sorted[-c(1), ]
+  
+  # remove commas from strings
+  df1_sorted$CASE_COUNT <- str_remove(df1_sorted$CASE_COUNT , ",")
+  df1_sorted$BX_CASE_COUNT <- str_remove(df1_sorted$BX_CASE_COUNT , ",")
+  df1_sorted$BK_CASE_COUNT <- str_remove(df1_sorted$BK_CASE_COUNT , ",")
+  df1_sorted$MN_CASE_COUNT <- str_remove(df1_sorted$MN_CASE_COUNT , ",")
+  df1_sorted$QN_CASE_COUNT <- str_remove(df1_sorted$QN_CASE_COUNT , ",")
+  df1_sorted$SI_CASE_COUNT <- str_remove(df1_sorted$SI_CASE_COUNT , ",")
+  df1_sorted$HOSPITALIZED_COUNT <- str_remove(df1_sorted$HOSPITALIZED_COUNT , ",")
+  df2_sorted$patroncount <- str_remove(df2_sorted$patroncount , ",")
+  
+  #convert to integer type
+  df1_sorted$CASE_COUNT <- as.integer(df1_sorted$CASE_COUNT)
+  df1_sorted$BX_CASE_COUNT <- as.integer(df1_sorted$BX_CASE_COUNT)
+  df1_sorted$BK_CASE_COUNT <- as.integer(df1_sorted$BK_CASE_COUNT)
+  df1_sorted$MN_CASE_COUNT <- as.integer(df1_sorted$MN_CASE_COUNT)
+  df1_sorted$QN_CASE_COUNT <- as.integer(df1_sorted$QN_CASE_COUNT)
+  df1_sorted$SI_CASE_COUNT <- as.integer(df1_sorted$SI_CASE_COUNT)
+  df1_sorted$HOSPITALIZED_COUNT <- as.integer(df1_sorted$HOSPITALIZED_COUNT)
+  df2_sorted$patroncount <- as.integer(df2_sorted$patroncount)
+  
+  #create month and year column
+  df1_sorted$Month_Year <- format(as.Date(df1_sorted$DATE_OF_INTEREST), "%m-%Y")
+  df2_sorted$Month_Year <- format(as.Date(df2_sorted$encounter_timestamp), "%m-%Y")
+  
+  #Create modified dataframes for visualizations
+  
+  #create subset
+  df2_sorted2 <- subset(df2_sorted, encounter_timestamp<='2020-12-03')
+  
+  #create table with mean patron count
+  df2_sorted3 <- df2_sorted2 %>%
+    group_by(encounter_timestamp) %>%
+    summarize(patroncount_mean = round(mean(patroncount)))
+  
+  #create table with mean patron count by borough
+  df2_sorted4 <- df2_sorted2 %>%
+    group_by(encounter_timestamp, park_borough) %>%
+    summarize(patroncount_mean = round(mean(patroncount)))
+  
+  df2_sorted5 <- df2_sorted2 %>%
+    mutate(month = month(encounter_timestamp)) %>%
+    group_by(month, park_borough) %>%
+    summarize(patroncount_mean = round(mean(patroncount)))
+  
+  df2_sorted6 <- df2_sorted2 %>%
+    group_by(amenity) %>%
+    summarize(amenity_count = n()) %>% 
+    arrange(desc(amenity_count), .by_group = TRUE)
+  
+  
+  #create intoduction tab
+  output$intro <- renderText({
+    paste("The COVID-19 pandemic has been an ongoing global pandemic since it was declared on March 11, 2020 by ",  
+          "the World Health Organization (WHO). As of March 28, 2021, WHO has reported 126,359,540 confirmed ",  
+          "cases and 2,769,473 deaths, making COVID-19 one of the deadliest pandemics in history. Tracking and ",
+          "reporting cases, hospitalizations, and deaths is especially important to scientists and epidemiologists ", 
+          "so they can learn more about the disease. Scientists track the diseases in order to try to slow its ",
+          "spread and surveillance allows epidemiologists to calculate  incidence, prevalence, hospitalizations, ",
+          "and deaths. This analysis will investigate two datasets from NYCOpenData: 1) COVID-19 case, hospitalization, ",
+          "and death rates in NYC and 2) social distancing information in public parks. The first table contains daily ",
+          "counts of NYC residents who tested positive for SARS-CoV-2, were hospitalized with COVID-19, and died ",
+          "from COVID-19 between February 2020 and December 2020. The second table contains daily encounters between ",  
+          "staff from NYC Parks Maintenance and Operations (M&O) and people violating social distancing guidelines ",  
+          "in parks between March 2020 and March 2021.",
+          "The goals of this analysis are to:   
+          1. Compare cases, hospitalizations, and death counts between boroughs  
+          2. Determine whether there is a relationship between the number of cases and park gatherings
+          3. Investigate which boroughs had the most park gatherings and what amenity was most used", sep="\n")
+  })
+  
+  # create number of cases/deaths/hospitalizations line chart
+  output$summary <- renderPlot({
+    
+    ggplot(df1_sorted %>% filter(DATE_OF_INTEREST >= input$dateRange[1] & DATE_OF_INTEREST <= input$dateRange[2]), aes(DATE_OF_INTEREST)) + 
+      geom_line(aes(y = CASE_COUNT, colour = "CASE_COUNT")) + 
+      geom_line(aes(y = DEATH_COUNT, colour = "DEATH_COUNT")) +
+      geom_line(aes(y = HOSPITALIZED_COUNT, colour = "HOSPITALIZED_COUNT")) +
+      labs(x='Date', y='Count', title = 'Number of Cases, Deaths, and Hospitalizations') +
+      scale_x_date(date_breaks = "months" , date_labels = "%b-%y")
+  }, height=700, width=900)
+  
+  # create park gatherings bar chart
+  output$parks <- renderPlot({
+    
+    ggplot(data=df2_sorted4 %>% filter(encounter_timestamp >= input$dateRange[1] & encounter_timestamp <= input$dateRange[2]), aes(x=encounter_timestamp, y=patroncount_mean, fill=park_borough)) +
+      geom_bar(stat="identity") +
+      labs(x='Date', y='Mean Patron Count', title = 'Number of People Gathering in Parks') +
+      scale_x_date(date_breaks = "months" , date_labels = "%b-%y")
+    
+    
+  }, height=700, width=900)
+  
+  # create cases by borough line chart
+  output$casesBorough <- renderPlot({
+    
+  ggplot(df1_sorted%>% filter(DATE_OF_INTEREST >= input$dateRange[1] & DATE_OF_INTEREST <= input$dateRange[2]), aes(DATE_OF_INTEREST)) + 
+    geom_line(aes(y = BX_CASE_COUNT, color = "Bronx")) + 
+    geom_line(aes(y = BK_CASE_COUNT, color = "Brooklyn")) +
+    geom_line(aes(y = MN_CASE_COUNT, color = "Manhattan")) +
+    geom_line(aes(y = QN_CASE_COUNT, color = "Queens")) +
+    geom_line(aes(y = SI_CASE_COUNT, color = "Staten Island")) +
+    labs(x='Date', y='Number of Cases', title = 'Number of Cases by Borough') +
+    scale_x_date(date_breaks = "months" , date_labels = "%b-%y")
+    
+  }, height=700, width=900)
+  
+  # create line and bar chart
+  output$casesVsPark <- renderPlot({
+    
+  ggplot() +
+    geom_bar(data=df2_sorted4%>% filter(encounter_timestamp >= input$dateRange[1] & encounter_timestamp <= input$dateRange[2]), aes(x = encounter_timestamp, y = patroncount_mean, fill=patroncount_mean, color='Mean Number of People Gathering in Park') , stat ="identity", color='steelblue', fill='steelblue')+
+    geom_line(data=df1_sorted%>% filter(DATE_OF_INTEREST >= input$dateRange[1] & DATE_OF_INTEREST <= input$dateRange[2]), aes(x = DATE_OF_INTEREST, y = CASE_COUNT, color='Number of Cases')) +
+    theme(axis.text.x = element_text(angle = 45),legend.position="bottom") +
+    scale_x_date(date_breaks = "months" , date_labels = "%b-%y") + 
+    labs(x='Date', y='Count', title = 'Number of Cases vs. Number People Gathering in Parks')
+    
+}, height=700, width=900)
+  
+  # create heatmap
+  output$heatmap <- renderPlot({
+
+  ggplot(df2_sorted5, aes(x = month, park_borough)) +
+    geom_tile(aes(fill = patroncount_mean)) + 
+    scale_fill_gradient('patroncount_mean', low = "lightblue", high = "darkblue") +
+    geom_text(aes(label = round(patroncount_mean, 0))) +
+    scale_x_continuous(breaks=seq(3,12,by=1)) +
+      labs(x='Month', y='Mean Patron Count', title = 'Mean Patron Count by Borough Heatmap')
+}, height=700, width=900)
+  
+  
+# create amenity pie chart
+  output$pie <- renderPlot({
+  ggplot(df2_sorted6, aes(x="", y=amenity_count, fill=amenity))+
+    geom_bar(width = 1, stat = "identity") +
+    geom_col(color = "black") + 
+    coord_polar("y", start=0) +
+    theme(axis.text.x=element_blank())  +
+    geom_text(aes(x=1.6, label=paste(round(amenity_count/sum(amenity_count)*100, 1),"%")),
+              position = position_stack(vjust=0.5)) +
+    theme(panel.background = element_blank(),
+          axis.line = element_blank(),
+          axis.text = element_blank(),
+          axis.ticks = element_blank(),
+          axis.title = element_blank(),
+          plot.title = element_text(hjust = 0.5, size = 18)) +
+    ggtitle("Amenities Usage") + 
+    scale_fill_manual(values = c("#F46698","#F36DDB","#DD6DF3","#AC6DF3","#7355FC","#5562FC","#5562FC","#55B5FC","#55C7FC","#55E8FC",
+                                 "#56EDEB","#93F9EF","#61F9BF","#5BEC75"))
+}, height=700, width=700)
+  
+  #create observations tab
+  output$obv <- renderText({
+    paste("From the previous data visualizations we can observe the following:  
+          1. The largest spike in the number of cases, deaths, and hospitalizations occured April 2020 and  
+             there was another spike in cases and hospitalizations in December 2020
+          2. The boroughs of Queens, Bronx, and Brooklyn generally had a higher number of cases than Staten  
+             Island and Manhattan. However, the differences in number of cases became smaller starting in May
+          3. There were many more park gatherings in spring and summer than winter
+          4. There does not appear to be a trend in the number of cases and park gatherings occurances
+          5. Manhattan was the only borough to have consistent gatherings from March through December
+          6. The Bronx had the largest park gathering mean in March and May-September
+          7. We start seeing fewer park gathering occurances starting in August, 
+          8. Of all of the park amenities reported, the open field/multi-purpose play area was used most   
+             frequently, followed by the soccer field and bench/sitting area", sep="\n")
+  })
+  
+}
+
+
+
+# UI
+fluidPage(theme = shinytheme("cosmo"),
+
+#app title
+titlePanel("COVID-19 in NYC Analysis"),
+
+column(3, wellPanel(
+  dateRangeInput('dateRange',
+                 label = 'Filter by Date',
+                 start = as.Date('2020-03-01') , end = as.Date('2020-12-03'),
+                 min=as.Date('2020-03-01'), max=as.Date('2021-03-21')
+  )
+)),
+
+ mainPanel(
+   # Output: Tabset w/ plot, summary, and table ----
+   tabsetPanel(type = "tabs",
+               tabPanel("Introduction", verbatimTextOutput("intro")),
+               tabPanel("Cases, Deaths, and Hospitalizations", plotOutput("summary")),
+               tabPanel("Cases by Borough", plotOutput("casesBorough")),
+               tabPanel("Park Crowds", plotOutput("parks")),
+               tabPanel("Number of Cases vs Park Crowds", plotOutput("casesVsPark")),
+               tabPanel("Park Crowds Heatmap", plotOutput("heatmap")),
+               tabPanel("Park Amenities Pie Chart", plotOutput("pie")),
+               tabPanel("Observations", verbatimTextOutput("obv"))
+               
+)
+)
+)
+
+
+```
+
+
+
