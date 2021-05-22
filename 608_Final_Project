@@ -132,7 +132,7 @@ function(input, output) {
     geom_line(data=df1_sorted%>% filter(DATE_OF_INTEREST >= input$dateRange[1] & DATE_OF_INTEREST <= input$dateRange[2]), aes(x = DATE_OF_INTEREST, y = CASE_COUNT, color='Number of Cases')) +
     theme(axis.text.x = element_text(angle = 45),legend.position="bottom") +
     scale_x_date(date_breaks = "months" , date_labels = "%b-%y") + 
-    labs(x='Date', y='Count', title = 'Number of Cases vs. Number People Gathering in Parks')
+    labs(x='Date', y='Count', title = 'Number of Cases vs. Mean Number People Gathering in Parks')
     
 }, height=700, width=900)
   
@@ -219,7 +219,7 @@ column(3, wellPanel(
                tabPanel("Introduction", verbatimTextOutput("intro")),
                tabPanel("Cases, Deaths, and Hospitalizations", plotOutput("summary")),
                tabPanel("Cases by Borough", plotOutput("casesBorough")),
-               tabPanel("Park Crowds", plotOutput("parks")),
+               tabPanel("Park Gatherings", plotOutput("parks")),
                tabPanel("Number of Cases vs Park Crowds", plotOutput("casesVsPark")),
                tabPanel("Park Crowds Heatmap", plotOutput("heatmap")),
                tabPanel("Park Amenities Pie Chart", plotOutput("pie")),
