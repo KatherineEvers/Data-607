@@ -66,16 +66,6 @@ function(input, output) {
     group_by(encounter_timestamp, park_borough) %>%
     summarize(patroncount_mean = round(mean(patroncount)))
   
-  df2_sorted5 <- df2_sorted2 %>%
-    mutate(month = month(encounter_timestamp)) %>%
-    group_by(month, park_borough) %>%
-    summarize(patroncount_mean = round(mean(patroncount)))
-  
-  df2_sorted6 <- df2_sorted2 %>%
-    group_by(amenity) %>%
-    summarize(amenity_count = n()) %>% 
-    arrange(desc(amenity_count), .by_group = TRUE)
-  
   
   #create intoduction tab
   output$intro <- renderText({
@@ -145,10 +135,14 @@ function(input, output) {
     
 }, height=700, width=900)
   
-  # create heatmap
+ # create heatmap
   output$heatmap <- renderPlot({
 
-  ggplot(df2_sorted5, aes(x = month, park_borough)) +
+  ggplot(df2_sorted2 %>%
+           filter(encounter_timestamp >= input$dateRange[1] & encounter_timestamp <= input$dateRange[2]) %>%
+           mutate(month = month(encounter_timestamp)) %>%
+           group_by(month, park_borough) %>%
+           summarize(patroncount_mean = round(mean(patroncount))), aes(x = month, park_borough)) +
     geom_tile(aes(fill = patroncount_mean)) + 
     scale_fill_gradient('patroncount_mean', low = "lightblue", high = "darkblue") +
     geom_text(aes(label = round(patroncount_mean, 0))) +
@@ -159,7 +153,11 @@ function(input, output) {
   
 # create amenity pie chart
   output$pie <- renderPlot({
-  ggplot(df2_sorted6, aes(x="", y=amenity_count, fill=amenity))+
+  ggplot(df2_sorted2 %>%
+           filter(encounter_timestamp >= input$dateRange[1] & encounter_timestamp <= input$dateRange[2]) %>%
+           group_by(amenity) %>%
+           summarize(amenity_count = n()) %>% 
+           arrange(desc(amenity_count), .by_group = TRUE), aes(x="", y=amenity_count, fill=amenity))+
     geom_bar(width = 1, stat = "identity") +
     geom_col(color = "black") + 
     coord_polar("y", start=0) +
@@ -180,17 +178,20 @@ function(input, output) {
   #create observations tab
   output$obv <- renderText({
     paste("From the previous data visualizations we can observe the following:  
-          1. The largest spike in the number of cases, deaths, and hospitalizations occured April 2020 and  
-             there was another spike in cases and hospitalizations in December 2020
+          1. The largest spike in the number of cases, deaths, and hospitalizations occured April and  
+             there was another spike in cases and hospitalizations in December. 
           2. The boroughs of Queens, Bronx, and Brooklyn generally had a higher number of cases than Staten  
-             Island and Manhattan. However, the differences in number of cases became smaller starting in May
-          3. There were many more park gatherings in spring and summer than winter
-          4. There does not appear to be a trend in the number of cases and park gatherings occurances
-          5. Manhattan was the only borough to have consistent gatherings from March through December
-          6. The Bronx had the largest park gathering mean in March and May-September
-          7. We start seeing fewer park gathering occurances starting in August, 
-          8. Of all of the park amenities reported, the open field/multi-purpose play area was used most   
-             frequently, followed by the soccer field and bench/sitting area", sep="\n")
+             Island and Manhattan. However, the differences in number of cases between boroughs became smaller 
+             starting in May.
+          3. There were many more park gatherings and larger mean patron counts in the spring and summer months 
+             than winter.
+          4. From this data, there does not appear to be a trend in the number of cases and mean park patron count.
+          5. Manhattan was the only borough to have consistent park gatherings from March through December.
+          6. When looking from March through December, the Bronx had the largest mean parton count in 
+             March and May-September.
+          7. We start seeing fewer park gathering occurances starting in August.
+          8. Of all of the park amenities reported from March through December, the open field/multi-purpose 
+             play area was used most frequently, followed by the soccer field and playground", sep="\n")
   })
   
 }
