@@ -80,11 +80,12 @@ function(input, output) {
           "counts of NYC residents who tested positive for SARS-CoV-2, were hospitalized with COVID-19, and died ",
           "from COVID-19 between February 2020 and December 2020. The second table contains daily encounters between ",  
           "staff from NYC Parks Maintenance and Operations (M&O) and people violating social distancing guidelines ",  
-          "in parks between March 2020 and March 2021.",
-          "The goals of this analysis are to:   
-          1. Compare cases, hospitalizations, and death counts between boroughs  
-          2. Determine whether there is a relationship between the number of cases and park gatherings
-          3. Investigate which boroughs had the most park gatherings and what amenity was most used", sep="\n")
+          "in parks between March 2020 and March 2021. For the purpose of this analysis, only March through December ",
+          "2020 records were used.",  
+          "Multiple dynamic visualizations were created in order explore the following objectives:
+           1. Compare cases, hospitalizations, and death counts between boroughs  
+           2. Determine whether there is a relationship between the number of cases and park gatherings
+           3. Investigate which boroughs had the most park gatherings and what amenity was most used", sep="\n")
   })
   
   # create number of cases/deaths/hospitalizations line chart
